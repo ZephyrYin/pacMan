@@ -80,15 +80,18 @@ class ReflexAgent(Agent):
         additionalScore = 0
         curPos = currentGameState.getPacmanPosition()
         nearestFood = self.getNearestFood(currentGameState)
-        curDistance = util.manhattanDistance(curPos, nearestFood)
-        newDistance = util.manhattanDistance(newPos, nearestFood)
-        if newDistance < curDistance:
-            additionalScore += 1
+        if len(nearestFood) > 0:
+            nF = random.choice(nearestFood)
+            curDistance = util.manhattanDistance(curPos, nF)
+            newDistance = util.manhattanDistance(newPos, nF)
+            if newDistance < curDistance:
+                additionalScore += 1
 
         nearestFGhost = self.getNearestFrightenGhost(currentGameState)
         if len(nearestFGhost) > 0:
-            curDistance = util.manhattanDistance(curPos, nearestFGhost[0])
-            newDistance = util.manhattanDistance(newPos, nearestFGhost[0])
+            nFG = random.choice(nearestFGhost)
+            curDistance = util.manhattanDistance(curPos, nFG)
+            newDistance = util.manhattanDistance(newPos, nFG)
             if newDistance < curDistance:
                 additionalScore += 200                                          # go after the nearest frighten ghosts
 
@@ -96,10 +99,6 @@ class ReflexAgent(Agent):
             if util.manhattanDistance(newPos, gState.getPosition()) == 1:
                 if gState.scaredTimer == 0:
                     additionalScore -= 600                      # avoid be eaten by ghost
-                else:
-                    additionalScore += 200/4
-
-
 
         return successorGameState.getScore() + additionalScore
 
@@ -107,19 +106,17 @@ class ReflexAgent(Agent):
     def getNearestFood(self, curGameState):
         pacManPos = curGameState.getPacmanPosition()
         food = curGameState.getFood()
-        #nearestFood = []
+        nearestFood = []
 
         minDistance = sys.maxint
         for f in food.asList():
             distance = util.manhattanDistance(pacManPos, f)
-
             if distance < minDistance:
                 minDistance = distance
-                #nearestFood = []
-                #nearestFood.append(f)
-                nearestFood = f
-            # elif distance == minDistance:
-            #     nearestFood.append(f)
+                nearestFood = []
+                nearestFood.append(f)
+            elif distance == minDistance:
+                nearestFood.append(f)
         return nearestFood
 
     def getNearestFrightenGhost(self, curGameState):
@@ -135,6 +132,8 @@ class ReflexAgent(Agent):
                 if distance < minDistance:
                     minDistance = distance
                     nearestFGPos = []
+                    nearestFGPos.append(ghostPos)
+                elif distance == minDistance:
                     nearestFGPos.append(ghostPos)
         return nearestFGPos
 
