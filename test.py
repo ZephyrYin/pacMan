@@ -28,12 +28,17 @@ import sys
 # for r in result:
 #     print r
 
-class ab():
-    def __init__(self, alpha = -sys.maxint-1, beta=sys.maxint):
-        self.alpha = alpha
-        self.beta = beta
+# class ab():
+#     def __init__(self, alpha = -sys.maxint-1, beta=sys.maxint):
+#         self.alpha = alpha
+#         self.beta = beta
+#
+#
+# c = ab()
+# print c.alpha
+# print c.beta
 
+a = [1,23,41213,123]
 
-c = ab()
-print c.alpha
-print c.beta
+a.remove(23)
+a.remove(4)
