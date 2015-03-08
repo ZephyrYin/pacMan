@@ -86,7 +86,7 @@ class ReflexAgent(Agent):
             curDistance = util.manhattanDistance(curPos, nF)
             newDistance = util.manhattanDistance(newPos, nF)
             if newDistance < curDistance:
-                additionalScore += 1
+                additionalScore += 1                                    # go to get nearest food
 
         nearestFGhost = self.getNearestFrightenGhost(currentGameState)
         if len(nearestFGhost) > 0:
@@ -166,10 +166,12 @@ class MultiAgentSearchAgent(Agent):
       is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
+    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2', alpha = -sys.maxint-1, beta=sys.maxint):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
+        self.alpha = alpha          # add by zephyrYin  3.8.15
+        self.beta = beta            # add by zephyrYin  3.8.15
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -211,7 +213,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         #util.raiseNotDefined()
 
     def maxValue(self, gameState, curDepth, depthLimit):
-        if curDepth > depthLimit or gameState.isLose() or gameState.isWin():
+        if curDepth >= depthLimit or gameState.isLose() or gameState.isWin():
             return self.evaluationFunction(gameState)
 
         v = -sys.maxint - 1
@@ -224,7 +226,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         return v
 
     def minValue(self, gameState, curDepth, depthLimit):
-        if curDepth > depthLimit or gameState.isLose() or gameState.isWin():
+        if curDepth >= depthLimit or gameState.isLose() or gameState.isWin():
             return self.evaluationFunction(gameState)
 
         v = sys.maxint
@@ -265,13 +267,89 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
+    # def __init__(self, agent, alpha = -sys.maxint-1, beta=sys.maxint):
+    #     self.agent = agent
+    #     self.alpha = alpha
+    #     self.beta = beta
+
+    def maxValue(self, gameState, curDepth, depthLimit):
+        if curDepth >= depthLimit or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        v = -sys.maxint - 1
+        legalMoves = gameState.getLegalActions()
+        legalMoves.remove(Directions.STOP)
+
+        for action in legalMoves:
+            successorGameState = gameState.generatePacmanSuccessor(action)
+            v = max(v, self.minValue(successorGameState, curDepth, depthLimit))
+            if v > self.beta:
+                'prun on max'
+                return v
+            self.alpha = max(self.alpha, v)
+            #print 'alpha ' + str(self.alpha)
+        return v
+
+    def minValue(self, gameState, curDepth, depthLimit):
+        if curDepth >= depthLimit or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        v = sys.maxint
+        allMoves = []
+        for agentIndex in range(1, gameState.getNumAgents()):
+            legalMoves = gameState.getLegalActions(agentIndex)
+            allMoves.append(legalMoves)
+        actionPermutations = self.getPermutations(allMoves)
+
+        for aP in actionPermutations:
+            successorGameState = gameState.deepCopy()
+            for index in range(len(aP)):
+                successorGameState = successorGameState.generateSuccessor(index + 1, aP[index])
+                if successorGameState.isLose() or successorGameState.isWin():
+                    break
+            v = min(v, self.maxValue(successorGameState, curDepth + 1, depthLimit))
+            if v <= self.alpha:
+                print 'prun on min'
+                return v
+            self.beta = min(self.beta, v)
+            #print 'beta ' + str(self.beta)
+        return v
+
+    def getPermutations(self, a):
+        result = []
+        temp = []
+        height = len(a)
+        self.permutations(a, result, temp, 0, height)
+        return result
+
+
+    def permutations(self, a, result, temp, depth, height):
+        if depth >= height:
+            result.append(copy.deepcopy(temp))
+            return
+        for r in a[depth]:
+            temp.append(r)
+            self.permutations(a, result, temp, depth+1, height)
+            temp.pop(-1)
 
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalMoves = gameState.getLegalActions()
+        legalMoves.remove(Directions.STOP)
+        maxV = -sys.maxint - 1
+        index = -1
+        for i in range(len(legalMoves)):
+            successorGameState = gameState.generatePacmanSuccessor(legalMoves[i])
+            value = self.minValue(successorGameState, 0, self.depth)
+            if value > maxV:
+                maxV = value
+                index = i
+        if index >= 0:
+            return legalMoves[index]
+        #util.raiseNotDefined()
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
