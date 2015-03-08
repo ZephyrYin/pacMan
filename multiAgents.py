@@ -17,6 +17,7 @@ from util import manhattanDistance
 from game import Directions
 import random, util
 import sys
+import copy
 
 from game import Agent
 
@@ -193,7 +194,72 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalMoves = gameState.getLegalActions()
+        legalMoves.remove(Directions.STOP)
+        maxV = -sys.maxint - 1
+        index = -1
+        for i in range(len(legalMoves)):
+            successorGameState = gameState.generatePacmanSuccessor(legalMoves[i])
+            value = self.minValue(successorGameState, 0, self.depth)
+            if value > maxV:
+                maxV = value
+                index = i
+        if index >= 0:
+            return legalMoves[index]
+
+
+        #util.raiseNotDefined()
+
+    def maxValue(self, gameState, curDepth, depthLimit):
+        if curDepth > depthLimit or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        v = -sys.maxint - 1
+        legalMoves = gameState.getLegalActions()
+        legalMoves.remove(Directions.STOP)
+
+        for action in legalMoves:
+            successorGameState = gameState.generatePacmanSuccessor(action)
+            v = max(v, self.minValue(successorGameState, curDepth, depthLimit))
+        return v
+
+    def minValue(self, gameState, curDepth, depthLimit):
+        if curDepth > depthLimit or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        v = sys.maxint
+        allMoves = []
+        for agentIndex in range(1, gameState.getNumAgents()):
+            legalMoves = gameState.getLegalActions(agentIndex)
+            allMoves.append(legalMoves)
+        actionPermutations = self.getPermutations(allMoves)
+
+        for aP in actionPermutations:
+            successorGameState = gameState.deepCopy()
+            for index in range(len(aP)):
+                successorGameState = successorGameState.generateSuccessor(index + 1, aP[index])
+                if successorGameState.isLose() or successorGameState.isWin():
+                    break
+            v = min(v, self.maxValue(successorGameState, curDepth + 1, depthLimit))
+        return v
+
+    def getPermutations(self, a):
+        result = []
+        temp = []
+        height = len(a)
+        self.permutations(a, result, temp, 0, height)
+        return result
+
+
+    def permutations(self, a, result, temp, depth, height):
+        if depth >= height:
+            result.append(copy.deepcopy(temp))
+            return
+        for r in a[depth]:
+            temp.append(r)
+            self.permutations(a, result, temp, depth+1, height)
+            temp.pop(-1)
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
